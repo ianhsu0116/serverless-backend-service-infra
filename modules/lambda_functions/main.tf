@@ -1,0 +1,81 @@
+locals {
+  # Defaults shared by all Lambda functions unless overridden.
+  lambda_defaults = {
+    memory_size   = 128
+    timeout       = 3
+    architectures = ["x86_64"]
+    env_vars = {
+      STAGE = var.environment
+    }
+  }
+
+  # Per-function overrides. Add new entries here to provision additional Lambdas.
+  lambda_overrides = {
+    helloworld = {
+      timeout = 5
+    }
+  }
+
+  lambda_configs = {
+    for name, override in local.lambda_overrides : name => merge(
+      local.lambda_defaults,
+      override,
+      {
+        function_name = "${name}-${var.environment}"
+        image_uri     = "${var.ecr_repo_prefix}/lambda/${name}:${var.image_tag}"
+      }
+    )
+  }
+}
+
+resource "aws_iam_role" "lambda_execution" {
+  name = "${var.project_name}-${var.environment}-lambda-execution"
+
+  assume_role_policy = jsonencode({
+    Version = "2012-10-17"
+    Statement = [
+      {
+        Action = "sts:AssumeRole"
+        Effect = "Allow"
+        Principal = {
+          Service = "lambda.amazonaws.com"
+        }
+      }
+    ]
+  })
+
+  tags = merge(var.common_tags, {
+    Component = "lambda"
+  })
+}
+
+resource "aws_iam_role_policy_attachment" "lambda_execution" {
+  role       = aws_iam_role.lambda_execution.name
+  policy_arn = "arn:aws:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole"
+}
+
+resource "aws_lambda_function" "this" {
+  for_each = local.lambda_configs
+
+  function_name = each.value.function_name
+  package_type  = "Image"
+  role          = aws_iam_role.lambda_execution.arn
+  image_uri     = each.value.image_uri
+  architectures = each.value.architectures
+  memory_size   = each.value.memory_size
+  timeout       = each.value.timeout
+
+  environment {
+    variables = merge(
+      {
+        ENV = var.environment
+      },
+      lookup(each.value, "env_vars", {})
+    )
+  }
+
+  tags = merge(var.common_tags, {
+    Component = "lambda"
+    Function  = each.key
+  })
+}
