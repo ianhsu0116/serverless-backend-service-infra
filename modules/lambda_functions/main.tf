@@ -13,6 +13,9 @@ locals {
   lambda_overrides = {
     helloworld = {
       timeout = 5
+      env_vars = {
+        TEST_SECRET = "Test Secret Value"
+      }
     }
   }
 
@@ -21,7 +24,11 @@ locals {
       local.lambda_defaults,
       override,
       {
-        function_name = "${name}-${var.environment}"
+        env_vars = merge(
+          local.lambda_defaults.env_vars,
+          lookup(override, "env_vars", {})
+        ),
+        function_name = "${name}-${var.environment}",
         image_uri     = "${var.ecr_repo_prefix}/lambda/${name}:${var.image_tag}"
       }
     )
@@ -76,6 +83,5 @@ resource "aws_lambda_function" "this" {
 
   tags = merge(var.common_tags, {
     Component = "lambda"
-    Function  = each.key
   })
 }
