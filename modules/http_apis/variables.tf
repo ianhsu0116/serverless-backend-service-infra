@@ -21,3 +21,11 @@ variable "lambda_functions" {
     invoke_arn    = string
   }))
 }
+
+variable "cognito" {
+  description = "Cognito configuration for JWT authorizer."
+  type = object({
+    issuer_url          = string
+    admin_app_client_id = string
+  })
+}

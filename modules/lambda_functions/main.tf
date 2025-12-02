@@ -17,6 +17,12 @@ locals {
         TEST_SECRET = "Test Secret Value"
       }
     }
+    helloworld-private = {
+      timeout = 5
+      env_vars = {
+        TEST_SECRET = "Test Secret Value - private"
+      }
+    }
   }
 
   lambda_configs = {
