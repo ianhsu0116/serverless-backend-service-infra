@@ -22,3 +22,13 @@ variable "image_tag" {
   description = "Image tag applied to all Lambda functions."
   type        = string
 }
+
+variable "private_subnet_ids" {
+  description = "Private subnet IDs for Lambda VPC configuration."
+  type        = list(string)
+}
+
+variable "lambda_security_group_id" {
+  description = "Security group ID for Lambda functions."
+  type        = string
+}

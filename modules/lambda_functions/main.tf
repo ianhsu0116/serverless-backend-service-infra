@@ -39,6 +39,11 @@ locals {
       }
     )
   }
+
+  lambda_managed_policies = [
+    "arn:aws:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole",
+    "arn:aws:iam::aws:policy/service-role/AWSLambdaVPCAccessExecutionRole",
+  ]
 }
 
 resource "aws_iam_role" "lambda_execution" {
@@ -62,9 +67,10 @@ resource "aws_iam_role" "lambda_execution" {
   })
 }
 
-resource "aws_iam_role_policy_attachment" "lambda_execution" {
+resource "aws_iam_role_policy_attachment" "lambda_managed" {
+  for_each   = toset(local.lambda_managed_policies)
   role       = aws_iam_role.lambda_execution.name
-  policy_arn = "arn:aws:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole"
+  policy_arn = each.value
 }
 
 resource "aws_lambda_function" "this" {
@@ -77,6 +83,10 @@ resource "aws_lambda_function" "this" {
   architectures = each.value.architectures
   memory_size   = each.value.memory_size
   timeout       = each.value.timeout
+  vpc_config {
+    subnet_ids         = var.private_subnet_ids
+    security_group_ids = [var.lambda_security_group_id]
+  }
 
   environment {
     variables = merge(
