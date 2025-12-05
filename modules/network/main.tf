@@ -12,7 +12,7 @@ resource "aws_vpc" "this" {
   enable_dns_hostnames = true
 
   tags = merge(var.common_tags, {
-    Name = "${var.project_name}-${var.environment}-vpc"
+    Name      = "${var.project_name}-${var.environment}-vpc"
     Component = "network"
   })
 }
@@ -35,7 +35,7 @@ resource "aws_subnet" "public" {
   map_public_ip_on_launch = true
 
   tags = merge(var.common_tags, {
-    Name  = "${var.project_name}-${var.environment}-public-${each.key}"
+    Name      = "${var.project_name}-${var.environment}-public-${each.key}"
     Component = "network"
   })
 }
@@ -48,7 +48,7 @@ resource "aws_subnet" "private" {
   availability_zone = local.azs[tonumber(each.key)]
 
   tags = merge(var.common_tags, {
-    Name  = "${var.project_name}-${var.environment}-private-${each.key}"
+    Name      = "${var.project_name}-${var.environment}-private-${each.key}"
     Component = "network"
   })
 }
